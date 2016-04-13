@@ -1,7 +1,8 @@
 {
-    "name": "AKerbel/WhmcsAddonAdminPageController",
+    "name": "akerbel/whmcsaddonadminpagecontroller",
+    "type": "project",
     "description": "Whmcs Addon Admin Page Controller",
-    "homepage": "https://github.com/AKerbel/WhmcsAddonAdminPageController",
+    "homepage": "https://github.com/akerbel/whmcsaddonadminpagecontroller",
     "authors": [
         {
             "name": "Anton Kerbel",
