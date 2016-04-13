@@ -1,6 +1,6 @@
 {
     "name": "akerbel/whmcsaddonadminpagecontroller",
-    "type": "project",
+    "version": "1.0.0",
     "description": "Whmcs Addon Admin Page Controller",
     "homepage": "https://github.com/akerbel/whmcsaddonadminpagecontroller",
     "authors": [
