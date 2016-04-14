@@ -2,11 +2,17 @@
     "name": "akerbel/whmcsaddonadminpagecontroller",
     "version": "1.0.0",
     "description": "Whmcs Addon Admin Page Controller",
+    "keywords": ["whmcs"],
     "homepage": "https://github.com/akerbel/whmcsaddonadminpagecontroller",
     "authors": [
         {
             "name": "Anton Kerbel",
             "email": "apefromfuture@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "WhmcsAddonAdminPageController\\": "src/"
+        }
+    },
 }
