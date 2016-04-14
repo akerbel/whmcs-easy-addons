@@ -11,8 +11,8 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "AdminPageController": "whmcsaddonadminpagecontroller/src/"
+        "psr-4": {
+            "whmcsaddonadminpagecontroller\\": "src/"
         }
     }
 }
