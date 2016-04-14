@@ -12,10 +12,10 @@ class PageController {
 	public $menu = array();
 	
 	public function __construct($vars) {
-		global $templates_compiledir, $customadminpath, $module;;
+		global $templates_compiledir, $customadminpath, $module;
 	
-		$this->view = new Smarty();
-		$this->view->template_dir = $_SERVER['DOCUMENT_ROOT']."/modules/addons/".$module.'/templates/';
+		$this->view = new \Smarty();
+		$this->view->template_dir = ROOTDIR."/modules/addons/".$module.'/templates/';
 		$this->view->compile_dir = $templates_compiledir;
 		$this->view->assign('_LANG', $LANG);
 		$this->view->assign('_CONFIG', $CONFIG);
