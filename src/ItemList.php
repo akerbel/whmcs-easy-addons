@@ -1,282 +1,320 @@
 <?php
+
 namespace whmcsaddonadminpagecontroller;
 
-if (!defined("WHMCS"))
-    die("This file cannot be accessed directly");
+if (!defined('WHMCS')) {
+    die('This file cannot be accessed directly');
+}
 
-class ItemList {
-	
-	/**
-	 * номер показываемой страницы
-	 */
-	public $page = 1;
-	
-	/**
-	 * элементов на странице
-	 */
-	public $perpage = 20;
-	
-	/**
-	 * имя столбца для сортировки по умолчанию
-	 */
-	public $order = 'id';
-	
-	/**
-	 * направление сортировки по умолчанию
-	 */
-	public $sort = 'DESC';
-	
-	/**
-	 * колличество элементов всего
-	 */
-	public $count;
-	
-	/**
-	 * количество страниц
-	 */
-	public $maxpage;
-	
-	/**
-	 * количество страниц до и после текущей, отрисовываемых в пагинаторе
-	 */
-	public $pages_in_paginator = 4;
-	
-	/**
-	 * массив элементов
-	 */
-	public $result = array();
-	
-	/**
-	 * код заголовков таблицы с кнопками сортировки и указателями
-	 */
-	public $tablehead;
-	
-	/**
-	 * пагинатор
-	 */
-	public $paginator;
-	
-	/**
-	 * настройки из WHMCS
-	 */
-	public $vars;
-	
-	/**
-	 * фильтр
-	 */
-	public $filter;
-	
-	/**
-	 * параметры фильтра
-	 */
-	private $filter_params;
-	
-	/**
-	 * параметры запроса
-	 */
-	private $sql_array;
-	
-	/**
-	 * конструктор
-	 */
-	public function __construct($sql = array(), $filter_params = array(), $tablehead_array = array()){
-		$this->sql_array = $sql;
-		$this->filter_params = $filter_params;
-		$this->createList();
-	}
-	
-	/**
-	 * создает массив элементов
-	 * @param array $sql - массив из элементов которого формируется запрос, оставлен для обратной совместимости со старыми версиями
-	 */
-	public function createList($sql = array()){
-		if (!count($sql))$sql = $this->sql_array;
-		
-		if ($_GET['page'] != NULL) $this->page = $_GET['page'];
-		if ($_GET['order'] != NULL) $this->order = $_GET['order'];	
-		if ($_GET['sort'] != NULL) $this->sort = $_GET['sort'];
-		
-		if (count($this->filter_params) and is_array($this->filter_params)){
-			foreach ($this->filter_params as $param){
-				if ($param['value']){
-					if ($param['type'] == 'LIKE'){
-						$sql['WHERE'] .= ' '.$param['name'].' LIKE "%'.$param['value'].'%" ';
-					}elseif($param['type'] == 'IN'){
-						$sql['WHERE'] .= ' '.$param['name'].' IN ('.$param['value'].') ';
-					}else{
-						$sql['WHERE'] .= ' '.$param['name'].' = "'.$param['value'].'" ';
-					}
-				}
-			}		
-		}
-		$this->sql_array = $sql;
-		
-		//формируем запрос
-		$_sql = 
-			" SELECT ".$this->sql_array['SELECT'] .
-			" FROM ".$this->sql_array['FROM'].
-			(isset($this->sql_array['INNER JOIN']) ? " INNER JOIN ".$this->sql_array['INNER JOIN'] : "").
-			(isset($this->sql_array['LEFT JOIN']) ? " LEFT JOIN ".$this->sql_array['LEFT JOIN'] : "").
-			(isset($this->sql_array['RIGHT JOIN']) ? " RIGHT JOIN ".$this->sql_array['RIGHT JOIN'] : "").
-			(isset($this->sql_array['WHERE']) ? " WHERE ".$this->sql_array['WHERE'] : "").
-			" ORDER BY ".$this->order." ".$this->sort.
-			" LIMIT ".(($this->page-1)*$this->perpage).", ".$this->perpage."
-		";
-		$result_data = full_query($_sql);
-		$result = array();
-		while ($line = mysql_fetch_assoc($result_data)){
-			$result[] = $line;
-		}
-		$this->result = $result;
-		$this->_createTablehead();
-		$this->_createPaginator();
-		$this->_createFilter();
-	}
-	
-	/**
-	 * создает $tablehead - html-код заголовков таблицы вместе с кнопками и указателями сортировки
-	 */
-	private function _createTablehead(){
-		$th = '';
-		if (isset($this->result[0]) and is_array($this->result[0])) {
-			$th .= '<tr>';
-			foreach (array_keys($this->result[0]) as $head){
-				$th .= '<th>';
-				if ($this->order != $head){ 
-					$th .= '<a href="'.$this->getUrl(array('order'=>$head)).'">'.$head.'</a>';
-				}else{
-					$th .= '<a href="'.$this->getUrl(array('order'=>$head, 'sort'=>$this->toggleSort($this->sort))).'">';
-					$th .= $head;
-					$th .= '<img class="absmiddle" src="images/'.strtolower($this->sort).'.gif">';
-					$th .= '</a>';
-				}
-				$th .= '</th>';
-			}
-			$th .= '</tr>';
-		}
-		$this->tablehead = $th;
-	}
-	
-	/**
-	 * создает $paginator - html-код пагинатора
-	 */
-	private function _createPaginator(){
-		//если не указана таблица, то ничего не получится
-		if ($this->sql_array['FROM']){
-			//узнаем количество элементов всего
-			$count = mysql_fetch_assoc(full_query("
+/**
+ * Class for fast creating lists of items from database.
+ */
+class ItemList
+{
+    /** @var int The number of chosen page */
+    public $page = 1;
+
+    /** @var int The count of items on page */
+    public $perpage = 20;
+
+    /** @var string The name of column for sorting */
+    public $order = 'id';
+
+    /** @var string The direction of sorting */
+    public $sort = 'DESC';
+
+    /** @var int The full count of items */
+    public $count;
+
+    /** @var int The count of pages */
+    public $maxpage;
+
+    /** @var int The count of pages showed in paginator before and after the current page */
+    public $pages_in_paginator = 4;
+
+    /** @var array The array of items */
+    public $result = array();
+
+    /** @var string The html-code of tablehead */
+    public $tablehead;
+
+    /** @var string The html-code of paginator */
+    public $paginator;
+
+    /** @var string The html-code of filter form */
+    public $filter;
+
+    /** @var array Filter params */
+    private $filter_params;
+
+    /** @var array Request params */
+    private $sql_array;
+
+    /**
+     * The constructor.
+     *
+     * @param array $sql           The array of request params. It can contains:
+     *                             'SELECT' - value part of SELECT statement.
+     *                             'FROM' - value part of FROM statement.
+     *                             'INNER JOIN' - value part of INNER JOIN statement.
+     *                             'LEFT JOIN' - value part of LEFT JOIN statement.
+     *                             'RIGHT JOIN' - value part of RIGHT JOIN statement.
+     *                             'WHERE' - value part of WHERE statement.
+     * @param array $filter_params The array of filters. Each filter must contains:
+     *                             'name' - a name of filtered parameter. It must matches with name in database.
+     *                             'value' - a value of filtered parameter.
+     *                             'description' - a description of filter.
+     *                             'type' - A type of filter. It can be:
+     *                             '' - (an empty value) will use a simple compare '='.
+     *                             'LIKE' - will use '%LIKE%'.
+     *                             'IN' - will use 'IN (...)'.
+     */
+    public function __construct($sql = array(), $filter_params = array())
+    {
+        $this->sql_array = $sql;
+        $this->filter_params = $filter_params;
+        $this->createList();
+    }
+
+    /**
+     * Get items from database and create a list.
+     */
+    public function createList()
+    {
+
+        // Get an information about sorting and chosen page.
+        if ($_GET['page'] != null) {
+            $this->page = $_GET['page'];
+        }
+        if ($_GET['order'] != null) {
+            $this->order = $_GET['order'];
+        }
+        if ($_GET['sort'] != null) {
+            $this->sort = $_GET['sort'];
+        }
+
+        // Include filters to request.
+        if (count($this->filter_params) and is_array($this->filter_params)) {
+            foreach ($this->filter_params as $param) {
+                if ($param['value']) {
+                    if ($param['type'] == 'LIKE') {
+                        $this->sql_array['WHERE'] .= ' '.$param['name'].' LIKE "%'.$param['value'].'%" ';
+                    } elseif ($param['type'] == 'IN') {
+                        $this->sql_array['WHERE'] .= ' '.$param['name'].' IN ('.$param['value'].') ';
+                    } else {
+                        $this->sql_array['WHERE'] .= ' '.$param['name'].' = "'.$param['value'].'" ';
+                    }
+                }
+            }
+        }
+
+        // Create SQL.
+        $_sql =
+            ' SELECT '.$this->sql_array['SELECT'].
+            ' FROM '.$this->sql_array['FROM'].
+            (isset($this->sql_array['INNER JOIN']) ? ' INNER JOIN '.$this->sql_array['INNER JOIN'] : '').
+            (isset($this->sql_array['LEFT JOIN']) ? ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] : '').
+            (isset($this->sql_array['RIGHT JOIN']) ? ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] : '').
+            (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '').
+            ' ORDER BY '.$this->order.' '.$this->sort.
+            ' LIMIT '.(($this->page - 1) * $this->perpage).', '.$this->perpage.'
+		';
+
+        // Do SQL request.
+        $result_data = full_query($_sql);
+        $result = array();
+
+        // Fetch answer.
+        while ($line = mysql_fetch_assoc($result_data)) {
+            $result[] = $line;
+        }
+        $this->result = $result;
+
+        // Create concomitants.
+        $this->createTablehead();
+        $this->createPaginator();
+        $this->createFilter();
+    }
+
+    /**
+     * Create the tablehead with sort buttons.
+     */
+    private function createTablehead()
+    {
+        $th = '';
+        if (isset($this->result[0]) and is_array($this->result[0])) {
+            $th .= '<tr>';
+            foreach (array_keys($this->result[0]) as $head) {
+                $th .= '<th>';
+                if ($this->order != $head) {
+                    $th .= '<a href="'.$this->getUrl(array('order' => $head)).'">'.$head.'</a>';
+                } else {
+                    $th .= '<a href="'.$this->getUrl(array('order' => $head, 'sort' => $this->toggleSort($this->sort))).'">';
+                    $th .= $head;
+                    $th .= '<img class="absmiddle" src="images/'.strtolower($this->sort).'.gif">';
+                    $th .= '</a>';
+                }
+                $th .= '</th>';
+            }
+            $th .= '</tr>';
+        }
+        $this->tablehead = $th;
+    }
+
+    /**
+     * Create the paginator.
+     */
+    private function createPaginator()
+    {
+
+        // If sql_array don`t contain 'FROM' parameter, we can`t create the paginator.
+        if ($this->sql_array['FROM']) {
+
+            // Do request about count of items in table
+            $count = mysql_fetch_assoc(full_query('
 				SELECT count(*) AS count 
-				FROM ".$this->sql_array['FROM'].
-				(isset($this->sql_array['INNER JOIN']) ? " INNER JOIN ".$this->sql_array['INNER JOIN'] : "").
-				(isset($this->sql_array['LEFT JOIN']) ? " LEFT JOIN ".$this->sql_array['LEFT JOIN'] : "").
-				(isset($this->sql_array['RIGHT JOIN']) ? " RIGHT JOIN ".$this->sql_array['RIGHT JOIN'] : "").
-				(isset($this->sql_array['WHERE']) ? " WHERE ".$this->sql_array['WHERE'] : "")
-			));
-			$this->count = $count['count'];
-			//узнаем количество страниц
-			$this->maxpage = floor($count['count']/$this->perpage);
-			//если у нас есть неполная страничка в конце, прибавляем к количеству страниц единичку
-			if (ceil($count['count']/$this->perpage) != $this->maxpage) $this->maxpage += 1;
-			//генерируем код пагинатора из полученных данных о страницах
-			$res = '';
-			if ($this->page>1)
-				$res .= '<a href="'.$this->getUrl(array('page' => ($this->page-1))).'" class="paginator prevpage"><<</a>';
-			if ($this->page-$this->pages_in_paginator > 1)
-				$res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1</a>..';
-			for ($i = $this->page-$this->pages_in_paginator; $i <= $this->page+$this->pages_in_paginator; $i++) {
-				if (($i>0) and ($i<=$this->maxpage)){
-					if ($i!= $this->page) 
-						$res .= '<a href="'.$this->getUrl(array('page'=>$i)).'" class="paginator page">'.$i.'</a>';
-					else
-						$res .= '<span class="paginator currentpage"><b>'.$i.'</b></span>';
-				}
-			}
-			if ($this->page+$this->pages_in_paginator < $this->maxpage)
-				$res .= '..<a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a>';
-			if ($this->page<$this->maxpage)
-				$res .= '<a href="'.$this->getUrl(array('page' => ($this->page+1))).'" class="paginator nextpage">>></a>';
-			
-			$this->paginator = $res;
-		}else{
-			$this->paginator = 'You have to pass the value "FROM"';
-		}
-	}
-	
-	/**
-	 * создает html-код формы фильтра
-	 * @param array $params - массив массивов с элементами
-	 *	name - техническое имя параметра, как в базе
-	 *	value - значение параметра
-	 *	description - описание параметра
-	 *	type - тип поиска. Если элемент пуст, то используется простое сравнение.
-	 *		возможнные значения элемента type:
-	 *			LIKE - будет использоватся операнд %LIKE%
-	 *			IN - будет использоватся операнд IN (...)
-	 */
-	private function _createFilter(){
-		$filter = '<form name="ak_filter" method="GET" action="" style="display:none">';
-		$filter .= '<table class="ak_filter">';
-		foreach ($this->filter_params as $param){
-			$filter .= '<tr>';
-				$filter .= '<td>'.$param['description'].'</td><td><input type="text" value="'.$param['value'].'" name="filter['.$param['name'].']"></td>';
-			$filter .= '</tr>';
-		}
-		foreach ($_GET as $name=>$value){
-			if ($name != 'filter'){
-				$filter .= '<input type="hidden" value="'.$value.'" name="'.$name.'">';
-			}
-		}
-		$filter .= '<tr><td><input type="submit" value="Поиск"></td><td></td></tr>';
-		$filter .= '</table>';
-		$filter .= '</form>';
-		$filter .= '<input type="button" id="show_filter" value="Поиск"><br>';
-		$filter .= '<script>$(document).ready(function(){
+				FROM '.$this->sql_array['FROM'].
+                (isset($this->sql_array['INNER JOIN']) ? ' INNER JOIN '.$this->sql_array['INNER JOIN'] : '').
+                (isset($this->sql_array['LEFT JOIN']) ? ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] : '').
+                (isset($this->sql_array['RIGHT JOIN']) ? ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] : '').
+                (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '')
+            ));
+            $this->count = $count['count'];
+
+            // Count of pages
+            $this->maxpage = floor($count['count'] / $this->perpage);
+
+            // If we have incomplete page in end, when do maxpage+1
+            if (ceil($count['count'] / $this->perpage) != $this->maxpage) {
+                $this->maxpage += 1;
+            }
+
+            // Create html-code of the paginator.
+            $res = '';
+
+            // Previous page
+            if ($this->page > 1) {
+                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"><<</a>';
+            }
+            // First page
+            if ($this->page - $this->pages_in_paginator > 1) {
+                $res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1</a>..';
+            }
+            // Simple pages
+            for ($i = $this->page - $this->pages_in_paginator; $i <= $this->page + $this->pages_in_paginator; ++$i) {
+                if (($i > 0) and ($i <= $this->maxpage)) {
+                    // Simple page
+                    if ($i != $this->page) {
+                        $res .= '<a href="'.$this->getUrl(array('page' => $i)).'" class="paginator page">'.$i.'</a>';
+                    // Chosen page
+                    } else {
+                        $res .= '<span class="paginator currentpage"><b>'.$i.'</b></span>';
+                    }
+                }
+            }
+            // Last page
+            if ($this->page + $this->pages_in_paginator < $this->maxpage) {
+                $res .= '..<a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a>';
+            }
+            // Next page
+            if ($this->page < $this->maxpage) {
+                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>></a>';
+            }
+
+            $this->paginator = $res;
+        } else {
+            $this->paginator = 'You should pass the value "FROM"';
+        }
+    }
+
+    /**
+     * Create the filter-code.
+     */
+    private function createFilter()
+    {
+        $filter = '<form name="ak_filter" method="GET" action="" style="display:none">';
+
+        $filter .= '<table class="ak_filter">';
+
+        foreach ($this->filter_params as $param) {
+            $filter .= '<tr>';
+            $filter .= '<td>'.$param['description'].'</td><td><input type="text" value="'.$param['value'].'" name="filter['.$param['name'].']"></td>';
+            $filter .= '</tr>';
+        }
+
+        foreach ($_GET as $name => $value) {
+            if ($name != 'filter') {
+                $filter .= '<input type="hidden" value="'.$value.'" name="'.$name.'">';
+            }
+        }
+
+        $filter .= '<tr><td><input type="submit" value="Поиск"></td><td></td></tr>';
+
+        $filter .= '</table>';
+
+        $filter .= '</form>';
+
+        $filter .= '<input type="button" id="show_filter" value="Поиск"><br>';
+
+        $filter .= '<script>$(document).ready(function(){
 			$("#show_filter").on("click", function(){
 				$("#show_filter").hide();
 				$("form[name=\'ak_filter\']").show();
 			});
 		});</script>';
-		$this->filter = $filter;
-	}
-	
-	/**
-	 * генерирует адрес страницы со всеми сортировками и выбранными страницами
-	 * @param array $newdata - массив параметров, значение которых отличается от значения по умолчанию
-	 */
-	public function getUrl($newdata = array()){
-		global $customadminpath, $module;
-		$data = array(
-			'page' => $this->page,
-			'order' => $this->order,
-			'sort' => $this->sort,
-		);
-		foreach ($_GET as $k=>$v){
-			$data[$k] = $v;
-		}
-		foreach ($newdata as $k=>$v){
-			$data[$k] = $v;
-		}
-		$url = '/'.$customadminpath.'/addonmodules.php?';
-		foreach ($data as $key=>$value){
-			if (is_array($value)){
-				foreach ($value as $k=>$v){
-					$url .=	'&'.$key.'['.$k.']='.$v;
-				}
-			}else{
-				$url .= '&'.$key.'='.$value;
-			}
-		}
-		return $url;
-	}
-	
-	/**
-	 * Превращает одну сортировку в другую
-	 * @param string $sort - изначальная сортировка
-	 */
-	public function toggleSort($sort){
-		if ($sort == 'DESC') return 'ASC';
-		if ($sort == 'ASC') return 'DESC';
-		return $sort;
-	}
+
+        $this->filter = $filter;
+    }
+
+    /**
+     * Create URL of page with all sort and filter parameters.
+     * 
+     * @param array $newdata The array of parameters, whose values is different from default values.
+     */
+    public function getUrl($newdata = array())
+    {
+        global $customadminpath, $module;
+        $data = array(
+            'page' => $this->page,
+            'order' => $this->order,
+            'sort' => $this->sort,
+        );
+        foreach ($_GET as $k => $v) {
+            $data[$k] = $v;
+        }
+        foreach ($newdata as $k => $v) {
+            $data[$k] = $v;
+        }
+        $url = '/'.$customadminpath.'/addonmodules.php?';
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $k => $v) {
+                    $url .=    '&'.$key.'['.$k.']='.$v;
+                }
+            } else {
+                $url .= '&'.$key.'='.$value;
+            }
+        }
+
+        return $url;
+    }
+
+    /**
+     * Toggle sort direction.
+     *
+     * @param string $sort The sort direction (DESC|ASC).
+     *
+     * @return string New sort direction.
+     */
+    public function toggleSort($sort)
+    {
+        if ($sort == 'DESC') {
+            return 'ASC';
+        }
+        if ($sort == 'ASC') {
+            return 'DESC';
+        }
+
+        return $sort;
+    }
 }
-?>
