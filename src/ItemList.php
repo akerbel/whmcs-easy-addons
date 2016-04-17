@@ -7,7 +7,7 @@ if (!defined('WHMCS')) {
 }
 
 /**
- * Class for fast creating lists of items from database.
+ * Class for fast creating of lists with items from a database.
  */
 class ItemList
 {
@@ -23,7 +23,7 @@ class ItemList
     /** @var string The direction of sorting */
     public $sort = 'DESC';
 
-    /** @var int The full count of items */
+    /** @var int The sum count of items */
     public $count;
 
     /** @var int The count of pages */
@@ -53,16 +53,16 @@ class ItemList
     /**
      * The constructor.
      *
-     * @param array $sql           The array of request params. It can contains:
+     * @param array $sql           The array of request params. It can contain:
      *                             'SELECT' - value part of SELECT statement.
      *                             'FROM' - value part of FROM statement.
      *                             'INNER JOIN' - value part of INNER JOIN statement.
      *                             'LEFT JOIN' - value part of LEFT JOIN statement.
      *                             'RIGHT JOIN' - value part of RIGHT JOIN statement.
      *                             'WHERE' - value part of WHERE statement.
-     * @param array $filter_params The array of filters. Each filter must contains:
-     *                             'name' - a name of filtered parameter. It must matches with name in database.
-     *                             'value' - a value of filtered parameter.
+     * @param array $filter_params The array of filters. Each filter must contain:
+     *                             'name' - a name of a filtered parameter. It must match with the name in a database.
+     *                             'value' - a value of a filtered parameter.
      *                             'description' - a description of filter.
      *                             'type' - A type of filter. It can be:
      *                             '' - (an empty value) will use a simple compare '='.
@@ -77,7 +77,7 @@ class ItemList
     }
 
     /**
-     * Get items from database and create a list.
+     * Get items from a database and create a list.
      */
     public function createList()
     {
@@ -137,7 +137,7 @@ class ItemList
     }
 
     /**
-     * Create the tablehead with sort buttons.
+     * Create a tablehead with sort buttons.
      */
     private function createTablehead()
     {
@@ -167,10 +167,10 @@ class ItemList
     private function createPaginator()
     {
 
-        // If sql_array don`t contain 'FROM' parameter, we can`t create the paginator.
+        // If sql_array doesn`t contain 'FROM' parameter, we can`t create the paginator.
         if ($this->sql_array['FROM']) {
 
-            // Do request about count of items in table
+            // Do request about a count of items in table
             $count = mysql_fetch_assoc(full_query('
 				SELECT count(*) AS count 
 				FROM '.$this->sql_array['FROM'].
@@ -184,7 +184,7 @@ class ItemList
             // Count of pages
             $this->maxpage = floor($count['count'] / $this->perpage);
 
-            // If we have incomplete page in end, when do maxpage+1
+            // If we have an incomplete page in the end, when do maxpage+1
             if (ceil($count['count'] / $this->perpage) != $this->maxpage) {
                 $this->maxpage += 1;
             }
@@ -228,7 +228,7 @@ class ItemList
     }
 
     /**
-     * Create the filter-code.
+     * Create a filter-code.
      */
     private function createFilter()
     {
@@ -267,9 +267,9 @@ class ItemList
     }
 
     /**
-     * Create URL of page with all sort and filter parameters.
+     * Create URL for a page with all sorting and filter parameters.
      * 
-     * @param array $newdata The array of parameters, whose values is different from default values.
+     * @param array $newdata The array of parameters, which values is different from default values.
      */
     public function getUrl($newdata = array())
     {

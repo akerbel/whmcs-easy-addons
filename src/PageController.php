@@ -7,20 +7,20 @@ if (!defined('WHMCS')) {
 }
 
 /**
- * Class for fast creation of admin tabs on modules admin page.
+ * Class for fast creating of tabs on module admin pages.
  */
 class PageController
 {
-    /** @var \Smarty contain a smartys instance */
+    /** @var \Smarty Contain a smarty instance */
     public $view;
 
-    /** @var string contain chosen tabs name */
+    /** @var string Contain chosen tabs name */
     public $action;
 
-    /** @var string contain link to a module */
+    /** @var string Contain a module link */
     public $modulelink;
 
-    /** @var array contain array of module tabs */
+    /** @var array Contain an array of module tabs */
     public $menu = array();
 
     /**
@@ -57,14 +57,14 @@ class PageController
     /**
      * Execute chosen tabs action.
      *
-     * @throws Exception If can`t find a method for chosen action.
+     * @throws Exception If it is not possible to find a method for chosen action.
      */
     public function run()
     {
         // Show tabs
         $this->_displayMenu();
 
-        // Try to execute actions method
+        // Try to execute action method
         $methodName = $this->action.'Action';
         try {
             if (method_exists($this, $methodName)) {
