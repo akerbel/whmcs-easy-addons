@@ -2,20 +2,21 @@ WHMCS Easy Addons
 =================
 
 WHMCS Easy Addons is a package for fast creating of addon admin pages.
+
 Homepage: https://github.com/akerbel/whmcs-easy-addons
 
 How to use:
 ==============
 I. Admin tabs.
-1. Your "_output" function should look like this:
+- Your "_output" function should look like this:
 ```php
 function EasyAddonsSkeleton_output($vars) {
 	global $module;
     include_once(ROOTDIR."/modules/addons/".$module.'/src/output.php'); 
 }
 ```
-2. Create 'src' folder.
-3. Create output.php file in 'src' folder.
+- Create 'src' folder.
+- Create output.php file in 'src' folder.
 output.php:
 ```php
 namespace EasyAddonsSkeleton;
@@ -25,7 +26,7 @@ include_once(ROOTDIR."/modules/addons/".$module.'/vendor/autoload.php');
 $EasyAddonsSkeleton = new EasyAddonsSkeletonController($vars);
 $EasyAddonsSkeleton->run();
 ```
-4. Create EasyAddonsSkeletonController.php in 'src' folder.
+- Create EasyAddonsSkeletonController.php in 'src' folder.
 EasyAddonsSkeletonController.php:
 ```php
 namespace EasyAddonsSkeleton;
@@ -55,16 +56,16 @@ class EasyAddonsSkeletonController extends PageController {
 	}
 }
 ```
-5. Create folder 'templates'.
-6. Create .tpl file for each your tab in 'templates' folder with names like 'firsttab.tpl' and 'secondtab.tpl'.
-7. You can assing your php variables in each 'Action' method:
+- Create folder 'templates'.
+- Create .tpl file for each your tab in 'templates' folder with names like 'firsttab.tpl' and 'secondtab.tpl'.
+- You can assing your php variables in each 'Action' method:
 ```php
 $this->view->assign('smarty_variable', $your_php_variable);
 ```
 
 ====================
 II. Fast item lists.
-1. Example code:
+- Example code:
 ```php
     $list = new ItemList(
     
@@ -95,8 +96,26 @@ II. Fast item lists.
     $this->view->assign('tablehead', $list->tablehead);
     $this->view->assign('filter', $list->filter);
 ```
-2. Now you can use this variables in your .tpl file^
-$filter - show a filter form.
-$paginator - show a page navigation.
-$tablehead - show a tablehead with sort buttons.
-$result - show an array of items.
+- Now you can use this variables in your .tpl file^
+1. $filter - show a filter form.
+2. $paginator - show a page navigation.
+3. $tablehead - show a tablehead with sort buttons.
+4. $result - show an array of items.
+
+=====
+III. composer.json example:
+```json
+{
+    "name": "EasyAddonsSkeleton",
+    "version": "1.0.0",
+    "description": "An example addon for WHMCS Easy Addons",
+    "autoload": {
+        "psr-4": {
+            "EasyAddonsSkeleton\\": "src/"
+        }
+    },
+    "require": {
+        "akerbel/whmcs-easy-addons": "1.0.*"
+    }
+}
+```
