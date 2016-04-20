@@ -1,9 +1,9 @@
 {
-    "name": "akerbel/whmcsaddonadminpagecontroller",
+    "name": "akerbel/whmcs-easy-addons",
     "version": "1.0.0",
     "description": "Whmcs Addon Admin Page Controller",
     "keywords": ["whmcs"],
-    "homepage": "https://github.com/akerbel/whmcsaddonadminpagecontroller",
+    "homepage": "https://github.com/akerbel/whmcs-easy-addons",
     "authors": [
         {
             "name": "Anton Kerbel",
@@ -12,7 +12,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "whmcsaddonadminpagecontroller\\": "src/"
+            "whmcsEasyAddons\\": "src/"
         }
     }
 }

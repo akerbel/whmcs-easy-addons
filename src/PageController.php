@@ -1,6 +1,6 @@
 <?php
 
-namespace whmcsaddonadminpagecontroller;
+namespace whmcsEasyAddons;
 
 if (!defined('WHMCS')) {
     die('This file cannot be accessed directly');
