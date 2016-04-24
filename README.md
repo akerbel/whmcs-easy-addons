@@ -52,6 +52,7 @@ function EasyAddonsSkeleton_output($vars) {
 ```
 - Create 'src' folder.
 - Create output.php file in 'src' folder.
+
 output.php:
 ```php
 namespace EasyAddonsSkeleton;
@@ -62,6 +63,7 @@ $EasyAddonsSkeleton = new EasyAddonsSkeletonController($vars);
 $EasyAddonsSkeleton->run();
 ```
 - Create EasyAddonsSkeletonController.php in 'src' folder.
+
 EasyAddonsSkeletonController.php:
 ```php
 namespace EasyAddonsSkeleton;
