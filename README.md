@@ -27,8 +27,7 @@ I. Admin tabs.
 ```bash
 curl -sS https://getcomposer.org/installer | php
 ```
-- Create composer.json file inside your addon.
-composer.json example:
+- Create composer.json file inside your addon:
 ```json
 {
     "name": "EasyAddonsSkeleton",
