@@ -23,7 +23,7 @@ php composer.phar require akerbel/whmcs-easy-addons
 How to use:
 ==============
 I. Admin tabs.
--  Install Composer
+- Install Composer
 ```bash
 curl -sS https://getcomposer.org/installer | php
 ```
@@ -70,7 +70,7 @@ namespace EasyAddonsSkeleton;
 
 use whmcsEasyAddons;
 
-class EasyAddonsSkeletonController extends PageController {
+class EasyAddonsSkeletonController extends whmcsEasyAddons\PageController {
     // This tab will be chosen by dafault
     public $action = 'firsttab';
 	
@@ -104,7 +104,7 @@ $this->view->assign('smarty_variable', $your_php_variable);
 II. Fast item lists.
 - Example code:
 ```php
-    $list = new ItemList(
+    $list = new whmcsEasyAddons\ItemList(
     
         // SQL params array. Read more in ItemList.php
         array(

@@ -243,7 +243,7 @@ class ItemList
         }
 
         foreach ($_GET as $name => $value) {
-            if ($name != 'filter') {
+            if (($name != 'filter') and ($name != 'page')) {
                 $filter .= '<input type="hidden" value="'.$value.'" name="'.$name.'">';
             }
         }
