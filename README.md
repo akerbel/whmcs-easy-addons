@@ -142,10 +142,10 @@ II. Fast item lists.
 
 New in v1.1:
 ==============
-1. Now JOIN parameters can be arrays. It means, now can use few similar JOINs in your query.
-2. Added ORDER and SORT parameters. If you use JOINs in your query, you must define you ORDER parameter, because 'ORDER BY' statement will use default 'id' and it will not work with JOINs.
+1. Now JOIN parameters can be arrays. It means, now you can use few similar JOINs in your query.
+2. ORDER and SORT parameters was added . If you use JOINs in your query, you must define you ORDER parameter, because 'ORDER BY' statement will use default 'id' and it will not work with JOINs.
 
 Fixes in v1.1:
 ==============
-1. The bug with namespaces of Exception class fixed.
-2. Spacebars added between pages in a paginator.
+1. The bug with namespaces of Exception class was fixed.
+2. Spacebars was added between pages in a paginator.
