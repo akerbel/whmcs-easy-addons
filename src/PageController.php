@@ -57,7 +57,7 @@ class PageController
     /**
      * Execute chosen tabs action.
      *
-     * @throws Exception If it is not possible to find a method for chosen action.
+     * @throws \Exception If it is not possible to find a method for chosen action.
      */
     public function run()
     {
@@ -71,9 +71,9 @@ class PageController
                 $this->$methodName();
                 echo $this->view->fetch($this->action.'.tpl');
             } else {
-                throw new Exception('No controller for '.$this->action);
+                throw new \Exception('No controller for '.$this->action);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo $e->getMessage();
         }
     }
