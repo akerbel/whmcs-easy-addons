@@ -139,3 +139,13 @@ II. Fast item lists.
 2. $paginator - show a page navigation.
 3. $tablehead - show a tablehead with sort buttons.
 4. $result - show an array of items.
+
+New in v1.1:
+==============
+1. Now JOIN parameters can be arrays. It means, now can use few similar JOINs in your query.
+2. Added ORDER and SORT parameters. If you use JOINs in your query, you must define you ORDER parameter, because 'ORDER BY' statement will use default 'id' and it will not work with JOINs.
+
+Fixes in v1.1:
+==============
+1. The bug with namespaces of Exception class fixed.
+2. Spacebars added between pages in a paginator.
