@@ -49,17 +49,22 @@ class ItemList
 
     /** @var array Request params */
     private $sql_array;
-
+    
+    /** @var string Raw SQL request */
+    public $raw_sql;
+    
     /**
      * The constructor.
      *
      * @param array $sql           The array of request params. It can contain:
      *                             'SELECT' - value part of SELECT statement.
      *                             'FROM' - value part of FROM statement.
-     *                             'INNER JOIN' - value part of INNER JOIN statement.
-     *                             'LEFT JOIN' - value part of LEFT JOIN statement.
-     *                             'RIGHT JOIN' - value part of RIGHT JOIN statement.
+     *                             'INNER JOIN' - value part of INNER JOIN statement. It can be an array.
+     *                             'LEFT JOIN' - value part of LEFT JOIN statement. It can be an array.
+     *                             'RIGHT JOIN' - value part of RIGHT JOIN statement. It can be an array.
      *                             'WHERE' - value part of WHERE statement.
+     *                             'ORDER' - value part of ORDER BY statement.
+     *                             'SORT' - direction of ORDER BY statement(DESC/ASC).
      * @param array $filter_params The array of filters. Each filter must contain:
      *                             'name' - a name of a filtered parameter. It must match with the name in a database.
      *                             'value' - a value of a filtered parameter.
@@ -81,16 +86,21 @@ class ItemList
      */
     public function createList()
     {
-
+        global $whmcsmysql;
+        
         // Get an information about sorting and chosen page.
         if ($_GET['page'] != null) {
             $this->page = $_GET['page'];
         }
         if ($_GET['order'] != null) {
             $this->order = $_GET['order'];
+        } elseif ($this->sql_array['ORDER']) {
+            $this->order = $this->sql_array['ORDER'];
         }
         if ($_GET['sort'] != null) {
             $this->sort = $_GET['sort'];
+        } elseif ($this->sql_array['SORT']) {
+            $this->sort = $this->sql_array['SORT'];
         }
 
         // Include filters to request.
@@ -109,19 +119,34 @@ class ItemList
         }
 
         // Create SQL.
-        $_sql =
+        $this->raw_sql =
             ' SELECT '.$this->sql_array['SELECT'].
             ' FROM '.$this->sql_array['FROM'].
-            (isset($this->sql_array['INNER JOIN']) ? ' INNER JOIN '.$this->sql_array['INNER JOIN'] : '').
-            (isset($this->sql_array['LEFT JOIN']) ? ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] : '').
-            (isset($this->sql_array['RIGHT JOIN']) ? ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] : '').
+            (isset($this->sql_array['INNER JOIN']) ? 
+                (is_array($this->sql_array['INNER JOIN'])) ?
+                    ' INNER JOIN '.implode(' INNER JOIN ', $this->sql_array['INNER JOIN'])
+                    : ' INNER JOIN '.$this->sql_array['INNER JOIN'] 
+                : ''
+            ).
+            (isset($this->sql_array['LEFT JOIN']) ? 
+                (is_array($this->sql_array['LEFT JOIN'])) ?
+                    ' LEFT JOIN '.implode(' LEFT JOIN ', $this->sql_array['LEFT JOIN'])
+                    : ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] 
+                : ''
+            ).
+            (isset($this->sql_array['RIGHT JOIN']) ? 
+                (is_array($this->sql_array['RIGHT JOIN'])) ?
+                    ' RIGHT JOIN '.implode(' RIGHT JOIN ', $this->sql_array['RIGHT JOIN'])
+                    : ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] 
+                : ''
+            ).
             (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '').
             ' ORDER BY '.$this->order.' '.$this->sort.
             ' LIMIT '.(($this->page - 1) * $this->perpage).', '.$this->perpage.'
 		';
 
         // Do SQL request.
-        $result_data = full_query($_sql);
+        $result_data = full_query($this->raw_sql);
         $result = array();
 
         // Fetch answer.
@@ -174,9 +199,24 @@ class ItemList
             $count = mysql_fetch_assoc(full_query('
 				SELECT count(*) AS count 
 				FROM '.$this->sql_array['FROM'].
-                (isset($this->sql_array['INNER JOIN']) ? ' INNER JOIN '.$this->sql_array['INNER JOIN'] : '').
-                (isset($this->sql_array['LEFT JOIN']) ? ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] : '').
-                (isset($this->sql_array['RIGHT JOIN']) ? ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] : '').
+                (isset($this->sql_array['INNER JOIN']) ? 
+                    (is_array($this->sql_array['INNER JOIN'])) ?
+                        ' INNER JOIN '.implode(' INNER JOIN ', $this->sql_array['INNER JOIN'])
+                        : ' INNER JOIN '.$this->sql_array['INNER JOIN'] 
+                    : ''
+                ).
+                (isset($this->sql_array['LEFT JOIN']) ? 
+                    (is_array($this->sql_array['LEFT JOIN'])) ?
+                        ' LEFT JOIN '.implode(' LEFT JOIN ', $this->sql_array['LEFT JOIN'])
+                        : ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] 
+                    : ''
+                ).
+                (isset($this->sql_array['RIGHT JOIN']) ? 
+                    (is_array($this->sql_array['RIGHT JOIN'])) ?
+                        ' RIGHT JOIN '.implode(' RIGHT JOIN ', $this->sql_array['RIGHT JOIN'])
+                        : ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] 
+                    : ''
+                ).
                 (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '')
             ));
             $this->count = $count['count'];
@@ -194,31 +234,31 @@ class ItemList
 
             // Previous page
             if ($this->page > 1) {
-                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"><<</a>';
+                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"><< </a>';
             }
             // First page
             if ($this->page - $this->pages_in_paginator > 1) {
-                $res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1</a>..';
+                $res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1 </a> .. ';
             }
             // Simple pages
             for ($i = $this->page - $this->pages_in_paginator; $i <= $this->page + $this->pages_in_paginator; ++$i) {
                 if (($i > 0) and ($i <= $this->maxpage)) {
                     // Simple page
                     if ($i != $this->page) {
-                        $res .= '<a href="'.$this->getUrl(array('page' => $i)).'" class="paginator page">'.$i.'</a>';
+                        $res .= '<a href="'.$this->getUrl(array('page' => $i)).'" class="paginator page">'.$i.'</a> ';
                     // Chosen page
                     } else {
-                        $res .= '<span class="paginator currentpage"><b>'.$i.'</b></span>';
+                        $res .= '<span class="paginator currentpage"><b>'.$i.'</b></span> ';
                     }
                 }
             }
             // Last page
             if ($this->page + $this->pages_in_paginator < $this->maxpage) {
-                $res .= '..<a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a>';
+                $res .= '.. <a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a> ';
             }
             // Next page
             if ($this->page < $this->maxpage) {
-                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>></a>';
+                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>></a> ';
             }
 
             $this->paginator = $res;
