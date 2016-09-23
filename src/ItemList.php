@@ -40,6 +40,9 @@ class ItemList
 
     /** @var string The html-code of paginator */
     public $paginator;
+    
+    /** @var string The paginators type */
+    public $paginator_type;
 
     /** @var string The html-code of filter form */
     public $filter;
@@ -70,14 +73,16 @@ class ItemList
      *                             'value' - a value of a filtered parameter.
      *                             'description' - a description of filter.
      *                             'type' - A type of filter. It can be:
-     *                             '' - (an empty value) will use a simple compare '='.
-     *                             'LIKE' - will use '%LIKE%'.
-     *                             'IN' - will use 'IN (...)'.
+     *                                 '' - (an empty value) will use a simple compare '='.
+     *                                 'LIKE' - will use '%LIKE%'.
+     *                                 'IN' - will use 'IN (...)'.
+     * @param string $paginator_type The paginators type. Can be 'default' and 'short'.
      */
-    public function __construct($sql = array(), $filter_params = array())
+    public function __construct($sql = array(), $filter_params = array(), $paginator_type = 'default')
     {
         $this->sql_array = $sql;
         $this->filter_params = $filter_params;
+        $this->paginator_type = $paginator_type;
         $this->createList();
     }
 
@@ -194,73 +199,95 @@ class ItemList
 
         // If sql_array doesn`t contain 'FROM' parameter, we can`t create the paginator.
         if ($this->sql_array['FROM']) {
-
-            // Do request about a count of items in table
-            $count = mysql_fetch_assoc(full_query('
-				SELECT count(*) AS count 
-				FROM '.$this->sql_array['FROM'].
-                (isset($this->sql_array['INNER JOIN']) ? 
-                    (is_array($this->sql_array['INNER JOIN'])) ?
-                        ' INNER JOIN '.implode(' INNER JOIN ', $this->sql_array['INNER JOIN'])
-                        : ' INNER JOIN '.$this->sql_array['INNER JOIN'] 
-                    : ''
-                ).
-                (isset($this->sql_array['LEFT JOIN']) ? 
-                    (is_array($this->sql_array['LEFT JOIN'])) ?
-                        ' LEFT JOIN '.implode(' LEFT JOIN ', $this->sql_array['LEFT JOIN'])
-                        : ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] 
-                    : ''
-                ).
-                (isset($this->sql_array['RIGHT JOIN']) ? 
-                    (is_array($this->sql_array['RIGHT JOIN'])) ?
-                        ' RIGHT JOIN '.implode(' RIGHT JOIN ', $this->sql_array['RIGHT JOIN'])
-                        : ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] 
-                    : ''
-                ).
-                (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '')
-            ));
-            $this->count = $count['count'];
-
-            // Count of pages
-            $this->maxpage = floor($count['count'] / $this->perpage);
-
-            // If we have an incomplete page in the end, when do maxpage+1
-            if (ceil($count['count'] / $this->perpage) != $this->maxpage) {
-                $this->maxpage += 1;
-            }
-
-            // Create html-code of the paginator.
+            
             $res = '';
 
-            // Previous page
-            if ($this->page > 1) {
-                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"><< </a>';
-            }
-            // First page
-            if ($this->page - $this->pages_in_paginator > 1) {
-                $res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1 </a> .. ';
-            }
-            // Simple pages
-            for ($i = $this->page - $this->pages_in_paginator; $i <= $this->page + $this->pages_in_paginator; ++$i) {
-                if (($i > 0) and ($i <= $this->maxpage)) {
-                    // Simple page
-                    if ($i != $this->page) {
-                        $res .= '<a href="'.$this->getUrl(array('page' => $i)).'" class="paginator page">'.$i.'</a> ';
-                    // Chosen page
-                    } else {
-                        $res .= '<span class="paginator currentpage"><b>'.$i.'</b></span> ';
+            // Make a short form of the paginator
+            if ($this->paginator_type == 'short') {
+                
+                $res .= '<ul class="pager">';
+                
+                // Previous page
+                if ($this->page > 1) {
+                    $res .= '<li class="previous"><a disabled href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"> << Previous <<</a></li>';
+                } else {
+                    $res .= '<li class="previous disabled"><a disabled href="#" class="paginator prevpage"> << Previous <<</a></li>';
+                }
+                
+                // Next page
+                $res .= '<li class="next"><a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>> Next >></a></li>';
+
+                $res .= '</ul>';
+            
+            // Make a default form of the paginator
+            } else {
+        
+                // Do request about a count of items in table
+                $count = mysql_fetch_assoc(full_query('
+                    SELECT count(*) AS count 
+                    FROM '.$this->sql_array['FROM'].
+                    (isset($this->sql_array['INNER JOIN']) ? 
+                        (is_array($this->sql_array['INNER JOIN'])) ?
+                            ' INNER JOIN '.implode(' INNER JOIN ', $this->sql_array['INNER JOIN'])
+                            : ' INNER JOIN '.$this->sql_array['INNER JOIN'] 
+                        : ''
+                    ).
+                    (isset($this->sql_array['LEFT JOIN']) ? 
+                        (is_array($this->sql_array['LEFT JOIN'])) ?
+                            ' LEFT JOIN '.implode(' LEFT JOIN ', $this->sql_array['LEFT JOIN'])
+                            : ' LEFT JOIN '.$this->sql_array['LEFT JOIN'] 
+                        : ''
+                    ).
+                    (isset($this->sql_array['RIGHT JOIN']) ? 
+                        (is_array($this->sql_array['RIGHT JOIN'])) ?
+                            ' RIGHT JOIN '.implode(' RIGHT JOIN ', $this->sql_array['RIGHT JOIN'])
+                            : ' RIGHT JOIN '.$this->sql_array['RIGHT JOIN'] 
+                        : ''
+                    ).
+                    (isset($this->sql_array['WHERE']) ? ' WHERE '.$this->sql_array['WHERE'] : '')
+                ));
+                $this->count = $count['count'];
+
+                // Count of pages
+                $this->maxpage = floor($count['count'] / $this->perpage);
+
+                // If we have an incomplete page in the end, when do maxpage+1
+                if (ceil($count['count'] / $this->perpage) != $this->maxpage) {
+                    $this->maxpage += 1;
+                }
+
+                // Create html-code of the paginator.
+
+                // Previous page
+                if ($this->page > 1) {
+                    $res .= '<a href="'.$this->getUrl(array('page' => ($this->page - 1))).'" class="paginator prevpage"><< </a>';
+                }
+                // First page
+                if ($this->page - $this->pages_in_paginator > 1) {
+                    $res .= '<a href="'.$this->getUrl(array('page' => 1)).'" class="paginator firstpage">1 </a> .. ';
+                }
+                // Simple pages
+                for ($i = $this->page - $this->pages_in_paginator; $i <= $this->page + $this->pages_in_paginator; ++$i) {
+                    if (($i > 0) and ($i <= $this->maxpage)) {
+                        // Simple page
+                        if ($i != $this->page) {
+                            $res .= '<a href="'.$this->getUrl(array('page' => $i)).'" class="paginator page">'.$i.'</a> ';
+                        // Chosen page
+                        } else {
+                            $res .= '<span class="paginator currentpage"><b>'.$i.'</b></span> ';
+                        }
                     }
                 }
+                // Last page
+                if ($this->page + $this->pages_in_paginator < $this->maxpage) {
+                    $res .= '.. <a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a> ';
+                }
+                // Next page
+                if ($this->page < $this->maxpage) {
+                    $res .= '<a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>></a> ';
+                }
             }
-            // Last page
-            if ($this->page + $this->pages_in_paginator < $this->maxpage) {
-                $res .= '.. <a href="'.$this->getUrl(array('page' => ($this->maxpage))).'" class="paginator lastpage">'.$this->maxpage.'</a> ';
-            }
-            // Next page
-            if ($this->page < $this->maxpage) {
-                $res .= '<a href="'.$this->getUrl(array('page' => ($this->page + 1))).'" class="paginator nextpage">>></a> ';
-            }
-
+            
             $this->paginator = $res;
         } else {
             $this->paginator = 'You should pass the value "FROM"';

@@ -112,7 +112,7 @@ II. Fast item lists.
             'FROM' => 'tblmodulelog',
         ),
         
-        // Filters array. Read more in ItemList.php
+        // Filters array. Read more in ItemList.php . Optional.
         array(
             array(
                 'name' => 'module', 'value' => $_GET['filter']['module'], 'description' => 'module'
@@ -126,7 +126,10 @@ II. Fast item lists.
             array(
                 'name' => 'response', 'value' => $_GET['filter']['response'], 'description' => 'response', 'type' => 'LIKE'
             ),
-        )
+        ), 
+        
+        // Paginators type. Read more in a changelog for v1.2 . Optional.
+        'dafault'
     );
     $this->view->assign('result', $list->result);
     $this->view->assign('paginator', $list->paginator);
@@ -149,3 +152,9 @@ Fixes in v1.1:
 ==============
 1. The bug with namespaces of Exception class was fixed.
 2. Spacebars was added between pages in a paginator.
+
+New in v1.2:
+==============
+1. Types of the paginator added. Enabled 'default' and 'short'. 
+'default' type is an old paginator with numbers.
+'short' type is a new fast paginator. Use it if you work with a very big table. It includes only two buttons: previous page and next page. Stylized as a default WHMCS module logs` paginator.
